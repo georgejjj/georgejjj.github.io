@@ -1,20 +1,27 @@
 ---
-title: "Teaching experience 1"
+title: "Financial Economics"
 collection: teaching
-type: "Undergraduate course"
-permalink: /teaching/2014-spring-teaching-1
-venue: "University 1, Department"
-date: 2014-01-01
-location: "City, Country"
+type: "Graduate course"
+permalink: /teaching/2024-summer-fe
+venue: "Shanghai Jiao Tong University, LEC"
+date: 2024-07-01
+location: "Shanghai, China"
 ---
 
-This is a description of a teaching experience. You can use markdown like any other post.
+Financial Economics
+====
 
-Heading 1
-======
+Lecture Notes
+-----
+* [Lecture 1: Introduction](assets/pdfs/lecture-notes-1.pdf)
+* [Lecture 2: Advanced Topics](assets/pdfs/lecture-notes-2.pdf)
 
-Heading 2
-======
+Assignments
+-----
+* [Assignment 1](assets/pdfs/assignment-1.pdf)
+* [Assignment 2](assets/pdfs/assignment-2.pdf)
 
-Heading 3
-======
+
+Textbook (Not for distribution)
+-----
+* [Microfoundations of Financial Economics by Yvan Lengwiler](/files/2024-summer-fe/Lengwiler-Microfoundations.pdf)

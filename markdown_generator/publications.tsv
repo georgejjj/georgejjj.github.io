@@ -1,4 +1,9 @@
 pub_date	title	venue	excerpt	citation	url_slug	paper_url	slides_url
-2009-10-01	Paper Title Number 1	Journal 1	This paper is about the number 1. The number 2 is left for future work.	Your Name, You. (2009). "Paper Title Number 1." <i>Journal 1</i>. 1(1).	paper-title-number-1	http://academicpages.github.io/files/paper1.pdf	http://academicpages.github.io/files/slides1.pdf
-2010-10-01	Paper Title Number 2	Journal 1	This paper is about the number 2. The number 3 is left for future work.	Your Name, You. (2010). "Paper Title Number 2." <i>Journal 1</i>. 1(2).	paper-title-number-2	http://academicpages.github.io/files/paper2.pdf	http://academicpages.github.io/files/slides2.pdf
-2015-10-01	Paper Title Number 3	Journal 1	This paper is about the number 3. The number 4 is left for future work.	Your Name, You. (2015). "Paper Title Number 3." <i>Journal 1</i>. 1(3).	paper-title-number-3	http://academicpages.github.io/files/paper3.pdf	http://academicpages.github.io/files/slides3.pdf
+2018-9-1	Financial literacy and gender difference in loan performance	Journal of Empirical Finance	We use data from a major peer-to-peer lending marketplace in China to study whether female and male investors evaluate loan performance differently.	"Chen, J., Jiang, J., & Liu, Y. J. (2018). Financial literacy and gender difference in loan performance. <i>Journal of Empirical Finance </i>, 48, 307-320."	gender_jef	https://fem.pku.edu.cn/docs/20190604103311800233.pdf	
+2020-6-1	Social heterogeneity and local bias in peer-to-peer lending: Evidence from China	Journal of Comparative Economics	This paper investigates the presence of local bias in the peer-to-peer (P2P) lending market and explores the social heterogeneous factors that may affect the formulation of the investor's local bias.	"Jiang, J., Liu, Y. J., & Lu, R. (2020). Social heterogeneity and local bias in peer-to-peer lending: Evidence from China. <i>Journal of Comparative Economics</i>, 48(2), 302-324."	local_jcf		
+2022-5-4	Proper fund size: a perspective from both investors and fund managers	Quantitative Finance	This paper proposes the notion of the proper size interval for funds and the market redemption return in fund markets.	"Zhang, L., Jiang, J., & An, Y. (2022). Proper fund size: a perspective from both investors and fund managers. <i>Quantitative Finance</i>, 22(5), 923-942."	fund_qf		
+							
+							
+							
+							
+							
