@@ -13,8 +13,8 @@ Financial Economics
 
 Lecture Notes
 -----
-* [Lecture 1: Introduction](assets/pdfs/lecture-notes-1.pdf)
-* [Lecture 2: Advanced Topics](assets/pdfs/lecture-notes-2.pdf)
+* [Lecture 0: Introduction](assets/pdfs/lecture-notes-1.pdf)
+* [Lecture 1: Contigent Claim Economy](assets/pdfs/lecture-notes-2.pdf)
 
 Assignments
 -----
