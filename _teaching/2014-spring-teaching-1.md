@@ -4,7 +4,7 @@ collection: teaching
 type: "Graduate course"
 permalink: /teaching/2024-summer-fe
 venue: "Shanghai Jiao Tong University, LEC"
-date: 2024-07-01
+date: 2024-06-24
 location: "Shanghai, China"
 ---
 
@@ -13,15 +13,17 @@ Financial Economics
 
 Lecture Notes
 -----
-* [Lecture 0: Introduction](assets/pdfs/lecture-notes-1.pdf)
-* [Lecture 1: Contigent Claim Economy](assets/pdfs/lecture-notes-2.pdf)
+* [Lecture 1: Introduction](/files/2024-summer-fe/lecture 1_handout.pdf)
+* [Lecture 2: Contigent Claim Economy](/files/2024-summer-fe/lecture 2_handout.pdf)
+* [Lecture 3: Asset Economy](/files/2024-summer-fe/lecture 3_handout.pdf)
 
 Assignments
 -----
-* [Assignment 1](assets/pdfs/assignment-1.pdf)
-* [Assignment 2](assets/pdfs/assignment-2.pdf)
+* [Assignment 1]
+* [Assignment 2]
 
 
 Textbook (Not for distribution)
 -----
 * [Microfoundations of Financial Economics by Yvan Lengwiler](/files/2024-summer-fe/Lengwiler-Microfoundations.pdf)
+* [Financial Economics by Jürgen Eichberger and Ian R. Harpe](/files/2024-summer-fe/Eichberger_Harpe_FinancialEconomics.pdf)
