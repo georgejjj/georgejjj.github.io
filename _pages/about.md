@@ -7,7 +7,7 @@ redirect_from:
   - /about.html
 ---
 
-Jiajun Jiang is a Assistant Professor at the School of Economics, Fudan University, specializing in Behavioral Finance, Consumer Finance, and FinTech. He earned his Ph.D. in Economics from Guanghua School of Management, Peking University, in 2018, following a B.Sc. in Mathematics from Peking University in 2013. Dr. Jiang conducted postdoctoral research at the School of Economics, Fudan University, from 2018 to 2020, and was a visiting scholar at the Stern School of Business, New York University, from 2016 to 2017.
+Jiajun Jiang is a Associate Professor of Finance at the School of Economics, Fudan University, specializing in Behavioral Finance, Consumer Finance, and FinTech. He earned his Ph.D. in Economics from Guanghua School of Management, Peking University, in 2018, following a B.Sc. in Mathematics from Peking University in 2013. Dr. Jiang conducted postdoctoral research at the School of Economics, Fudan University, from 2018 to 2020, and was a visiting scholar at the Stern School of Business, New York University, from 2016 to 2017.
 
 Dr. Jiang's research has been published in top-tier journals such as the Journal of Comparative Economics and the Journal of Empirical Finance, as well as leading Chinese journals including Economic Research Journal and Journal of Financial Research. He has led and participated in research projects funded by the National Natural Science Foundation of China and the Shanghai Philosophy and Social Science Planning Office.
 
