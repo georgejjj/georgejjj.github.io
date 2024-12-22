@@ -17,7 +17,11 @@ Education
 
 Work experience
 ======
-* 2020 - present: Assistant Professor
+* 2024 - present: Associate Professor
+  * Fudan University, Shanghai
+  * School of Economics
+
+* 2020 - 2023: Assistant Professor
   * Fudan University, Shanghai
   * School of Economics
 
