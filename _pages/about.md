@@ -16,6 +16,12 @@ At Fudan University, Dr. Jiang teaches Advanced Microeconomics, Financial Risk M
 Selected Publications
 -------
 
+Jiang, Jiajun, Yi-Tsung Lee, Yu-Jane Liu, and Juanjuan Meng. "Inattention and credit card repayment date." Journal of Economic Behavior & Organization 230 (2025): 106906.
+
+Jiang, Jiajun, Qi Liu, and Bo Sun. "Investor Sentiment, Managerial Manipulation, and Stock Returns." Journal of Money, Credit and Banking (2024).
+
+Zhang, Linlin, Jiajun Jiang, and Yunbi An. "Proper fund size: a perspective from both investors and fund managers." Quantitative Finance 22.5 (2022): 923-942.
+
 Jiang, Jiajun, Yu-Jane Liu, and Ruichang Lu. "Social heterogeneity and local bias in peer-to-peer lending – Evidence from China." Journal of Comparative Economics 48, no. 2 (2020): 302-324.
 
 Chen, Jia, Jiajun Jiang, and Yu-Jane Liu. "Financial Literacy and Gender Difference in Loan Defaults." Journal of Empirical Finance 48 (2018): 307–320.
