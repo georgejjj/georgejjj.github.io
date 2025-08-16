@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贝叶斯定理互动模拟器 - 医疗诊断</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700&display.swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+        .person-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(12px, 1fr));
+            gap: 4px;
+        }
+        .person {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            transition: background-color 0.3s, opacity 0.3s;
+            position: relative;
+        }
+        .person.sick { background-color: #ef4444; } /* red-500 */
+        .person.healthy { background-color: #22c55e; } /* green-500 */
+        .person.faded { opacity: 0.2; }
+        .person .test-result {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">贝叶斯定理互动模拟器</h1>
+            <p class="text-slate-600 mt-2">以医疗诊断为例，理解概率如何根据新证据而更新</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Panel: Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">1. 设定人群与先验概率</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="population-slider" class="flex justify-between">总人数: <span id="population-value">10,000</span></label>
+                            <input type="range" id="population-slider" min="1000" max="50000" step="1000" value="10000" class="w-full">
+                        </div>
+                        <div>
+                            <label for="prevalence-slider" class="flex justify-between">患病率 (Prior: P(患病)): <span id="prevalence-value">0.1</span>%</label>
+                            <input type="range" id="prevalence-slider" min="0.1" max="50" step="0.1" value="0.1" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">2. 设定检测准确率</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="sensitivity-slider" class="flex justify-between">灵敏度 (真阳性率): <span id="sensitivity-value">99</span>%</label>
+                            <p class="text-xs text-slate-500">P(阳性 | 患病) - 患者被正确检出的概率</p>
+                            <input type="range" id="sensitivity-slider" min="50" max="100" step="1" value="99" class="w-full">
+                        </div>
+                        <div>
+                            <label for="specificity-slider" class="flex justify-between">特异度 (真阴性率): <span id="specificity-value">99</span>%</label>
+                            <p class="text-xs text-slate-500">P(阴性 | 健康) - 健康者被正确检出的概率</p>
+                            <input type="range" id="specificity-slider" min="50" max="100" step="1" value="99" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">3. 开始实验</h2>
+                     <div class="grid grid-cols-2 gap-4 mt-4">
+                        <button id="run-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">进行检测</button>
+                        <button id="reset-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">重置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization & Results -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+                <div>
+                    <h2 id="population-title" class="text-xl font-bold mb-2">模拟人群 (共10,000人)</h2>
+                    <div id="population-grid" class="person-grid bg-slate-200 p-2 rounded-lg h-64 md:h-80 overflow-y-auto"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                     <div class="p-4 bg-slate-50 rounded-lg space-y-2">
+                        <h3 class="font-semibold text-slate-700">实验数据</h3>
+                        <p class="flex justify-between">患病人数: <span id="sick-count" class="font-mono">0</span></p>
+                        <p class="flex justify-between">健康人数: <span id="healthy-count" class="font-mono">0</span></p>
+                        <hr class="my-1">
+                        <p class="flex justify-between font-semibold">阳性总数: <span id="positive-total" class="font-mono">0</span></p>
+                        <p class="flex justify-between text-sm text-red-600">...真阳性 (患病): <span id="true-positives" class="font-mono">0</span></p>
+                        <p class="flex justify-between text-sm text-green-600">...假阳性 (健康): <span id="false-positives" class="font-mono">0</span></p>
+                         <hr class="my-1">
+                        <p class="flex justify-between font-semibold">阴性总数: <span id="negative-total" class="font-mono">0</span></p>
+                        <p class="flex justify-between text-sm text-green-600">...真阴性 (健康): <span id="true-negatives" class="font-mono">0</span></p>
+                        <p class="flex justify-between text-sm text-red-600">...假阴性 (患病): <span id="false-negatives" class="font-mono">0</span></p>
+                     </div>
+                     <div class="space-y-4">
+                         <div class="p-4 bg-blue-100 rounded-lg text-center">
+                            <h3 class="font-semibold text-blue-800">阳性预测值 (PPV)</h3>
+                            <p class="text-sm text-blue-700 mt-1">若检测为<b class="font-bold">阳性</b>，你<b class="font-bold">真正患病</b>的概率是：</p>
+                            <p id="posterior-prob-positive" class="text-4xl font-extrabold text-blue-600 mt-2">0.00 %</p>
+                         </div>
+                         <div class="p-4 bg-green-100 rounded-lg text-center">
+                            <h3 class="font-semibold text-green-800">阴性预测值 (NPV)</h3>
+                            <p class="text-sm text-green-700 mt-1">若检测为<b class="font-bold">阴性</b>，你<b class="font-bold">确实健康</b>的概率是：</p>
+                            <p id="posterior-prob-negative" class="text-4xl font-extrabold text-green-600 mt-2">0.00 %</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const populationSlider = document.getElementById('population-slider');
+        const prevalenceSlider = document.getElementById('prevalence-slider');
+        const sensitivitySlider = document.getElementById('sensitivity-slider');
+        const specificitySlider = document.getElementById('specificity-slider');
+        const populationValue = document.getElementById('population-value');
+        const prevalenceValue = document.getElementById('prevalence-value');
+        const sensitivityValue = document.getElementById('sensitivity-value');
+        const specificityValue = document.getElementById('specificity-value');
+        const populationGrid = document.getElementById('population-grid');
+        const populationTitle = document.getElementById('population-title');
+        const runButton = document.getElementById('run-button');
+        const resetButton = document.getElementById('reset-button');
+        
+        // Data display elements
+        const sickCountEl = document.getElementById('sick-count');
+        const healthyCountEl = document.getElementById('healthy-count');
+        const positiveTotalEl = document.getElementById('positive-total');
+        const truePositivesEl = document.getElementById('true-positives');
+        const falsePositivesEl = document.getElementById('false-positives');
+        const negativeTotalEl = document.getElementById('negative-total');
+        const trueNegativesEl = document.getElementById('true-negatives');
+        const falseNegativesEl = document.getElementById('false-negatives');
+        const posteriorProbPositiveEl = document.getElementById('posterior-prob-positive');
+        const posteriorProbNegativeEl = document.getElementById('posterior-prob-negative');
+
+        // --- Simulation State ---
+        let population = [];
+
+        // --- Core Functions ---
+        
+        function generatePopulation() {
+            const populationSize = parseInt(populationSlider.value);
+            populationTitle.textContent = `模拟人群 (共${populationSize.toLocaleString()}人)`;
+            population = [];
+            populationGrid.innerHTML = '';
+            const prevalence = parseFloat(prevalenceSlider.value) / 100;
+            const numSick = Math.round(populationSize * prevalence);
+
+            for (let i = 0; i < populationSize; i++) {
+                const isSick = i < numSick;
+                population.push({ id: i, isSick, testedPositive: null });
+            }
+
+            // Shuffle for better visualization
+            for (let i = population.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [population[i], population[j]] = [population[j], population[i]];
+            }
+
+            // To avoid performance issues, only render a subset of the population
+            const maxRender = 2500;
+            const renderablePopulation = population.slice(0, maxRender);
+
+            renderablePopulation.forEach(p => {
+                const personDiv = document.createElement('div');
+                personDiv.id = `person-${p.id}`;
+                personDiv.className = `person ${p.isSick ? 'sick' : 'healthy'}`;
+                populationGrid.appendChild(personDiv);
+            });
+            
+            updateCounts();
+        }
+
+        function runTest() {
+            const sensitivity = parseFloat(sensitivitySlider.value) / 100;
+            const specificity = parseFloat(specificitySlider.value) / 100;
+            const falsePositiveRate = 1 - specificity;
+
+            let truePositives = 0, falsePositives = 0;
+            let trueNegatives = 0, falseNegatives = 0;
+
+            population.forEach(p => {
+                if (p.isSick) {
+                    p.testedPositive = Math.random() < sensitivity;
+                    if(p.testedPositive) truePositives++;
+                    else falseNegatives++;
+                } else {
+                    p.testedPositive = Math.random() < falsePositiveRate;
+                    if(p.testedPositive) falsePositives++;
+                    else trueNegatives++;
+                }
+            });
+            
+            // Update visualization for the rendered subset
+            for (let i = 0; i < Math.min(population.length, 2500); i++) {
+                const p = population[i];
+                const personDiv = document.getElementById(`person-${p.id}`);
+                if (personDiv) {
+                    if (p.testedPositive) {
+                        const resultSpan = document.createElement('span');
+                        resultSpan.className = 'test-result';
+                        resultSpan.textContent = '+';
+                        personDiv.appendChild(resultSpan);
+                        personDiv.classList.remove('faded');
+                    } else {
+                        personDiv.classList.add('faded');
+                    }
+                }
+            }
+
+            const totalPositives = truePositives + falsePositives;
+            const totalNegatives = trueNegatives + falseNegatives;
+            const posteriorPositive = totalPositives > 0 ? (truePositives / totalPositives) * 100 : 0;
+            const posteriorNegative = totalNegatives > 0 ? (trueNegatives / totalNegatives) * 100 : 0;
+
+            positiveTotalEl.textContent = totalPositives.toLocaleString();
+            truePositivesEl.textContent = truePositives.toLocaleString();
+            falsePositivesEl.textContent = falsePositives.toLocaleString();
+            negativeTotalEl.textContent = totalNegatives.toLocaleString();
+            trueNegativesEl.textContent = trueNegatives.toLocaleString();
+            falseNegativesEl.textContent = falseNegatives.toLocaleString();
+            
+            posteriorProbPositiveEl.textContent = `${posteriorPositive.toFixed(2)} %`;
+            posteriorProbNegativeEl.textContent = `${posteriorNegative.toFixed(2)} %`;
+            
+            runButton.disabled = true;
+        }
+
+        function updateCounts() {
+            const populationSize = parseInt(populationSlider.value);
+            const prevalence = parseFloat(prevalenceSlider.value) / 100;
+            const numSick = Math.round(populationSize * prevalence);
+            const numHealthy = populationSize - numSick;
+            sickCountEl.textContent = numSick.toLocaleString();
+            healthyCountEl.textContent = numHealthy.toLocaleString();
+        }
+
+        function reset() {
+            runButton.disabled = false;
+            positiveTotalEl.textContent = '0';
+            truePositivesEl.textContent = '0';
+            falsePositivesEl.textContent = '0';
+            negativeTotalEl.textContent = '0';
+            trueNegativesEl.textContent = '0';
+            falseNegativesEl.textContent = '0';
+            posteriorProbPositiveEl.textContent = '0.00 %';
+            posteriorProbNegativeEl.textContent = '0.00 %';
+            generatePopulation();
+        }
+
+        // --- Event Listeners ---
+        populationSlider.addEventListener('input', (e) => {
+            populationValue.textContent = parseInt(e.target.value).toLocaleString();
+            reset();
+        });
+        prevalenceSlider.addEventListener('input', (e) => {
+            prevalenceValue.textContent = e.target.value;
+            reset();
+        });
+        sensitivitySlider.addEventListener('input', (e) => {
+            sensitivityValue.textContent = e.target.value;
+        });
+        specificitySlider.addEventListener('input', (e) => {
+            specificityValue.textContent = e.target.value;
+        });
+
+        runButton.addEventListener('click', runTest);
+        resetButton.addEventListener('click', reset);
+
+        // --- Initial Load ---
+        window.onload = () => {
+            generatePopulation();
+        };
+
+    </script>
+</body>
+</html>

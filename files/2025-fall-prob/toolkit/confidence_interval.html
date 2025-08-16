@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>置信区间互动模拟器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for plotting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- jStat for statistical calculations -->
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.5/dist/jstat.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">置信区间互动模拟器</h1>
+            <p class="text-slate-600 mt-2">直观理解置信区间如何“捕获”真实总体均值</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Panel: Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">1. 设定总体参数 (固定)</h2>
+                    <div class="p-4 bg-slate-50 rounded-lg text-center">
+                        <p class="text-slate-600">假设存在一个正态分布的总体</p>
+                        <p class="text-2xl font-bold">均值 μ = 50, 标准差 σ = 10</p>
+                        <p class="text-xs text-slate-500 mt-1">(在现实中 μ 是未知的，我们正是要估计它)</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">2. 设定抽样与置信水平</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="sample-size-slider" class="flex justify-between">样本大小 (n): <span id="sample-size-value">30</span></label>
+                            <input type="range" id="sample-size-slider" min="5" max="200" value="30" class="w-full">
+                        </div>
+                        <div>
+                            <label for="confidence-level-slider" class="flex justify-between">置信水平: <span id="confidence-level-value">95</span>%</label>
+                            <input type="range" id="confidence-level-slider" min="80" max="99" step="1" value="95" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">3. 开始模拟</h2>
+                     <div class="grid grid-cols-2 gap-4 mt-4">
+                        <button id="run-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">生成100个区间</button>
+                        <button id="reset-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">全部重置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization & Results -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-center">
+                    <div class="p-3 bg-slate-100 rounded-lg">
+                        <p class="text-sm text-slate-600">区间总数</p>
+                        <p id="total-intervals" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <p class="text-sm text-green-800">成功捕获</p>
+                        <p id="captured-intervals" class="text-2xl font-bold text-green-700">0</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-lg">
+                        <p class="text-sm text-red-800">捕获失败</p>
+                        <p id="missed-intervals" class="text-2xl font-bold text-red-700">0</p>
+                    </div>
+                </div>
+                <div class="relative">
+                    <canvas id="ci-chart"></canvas>
+                </div>
+                 <div class="mt-4 p-4 bg-blue-50 rounded-lg text-center">
+                    <p class="text-slate-700">当前捕获率:</p>
+                    <p id="capture-rate" class="text-4xl font-extrabold text-blue-600 mt-1">0.00 %</p>
+                    <p class="text-xs text-slate-500 mt-1">理论上应接近您设定的置信水平</p>
+                 </div>
+            </div>
+        </main>
+        
+        <footer class="mt-8 bg-white rounded-2xl shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">核心概念解读</h2>
+            <div class="prose max-w-none text-slate-700">
+                <p>这个模拟旨在澄清关于置信区间的一个常见误解。一个95%的置信区间，<strong>并不是说</strong>“真实总体均值μ有95%的概率落在这个区间内”。真实均值μ是一个固定的值，它要么在区间内，要么不在，没有概率可言。</p>
+                <p>正确的理解是：如果我们<strong>重复进行无数次抽样</strong>，每次都构建一个95%的置信区间，那么在这些无数个我们构建出的区间中，<strong>大约有95%的区间会成功“捕获”到那个固定的真实均值μ</strong>，而另外5%的区间则会“捕获失败”。</p>
+                <p>在这个模拟中，每一条线段都是一个根据随机样本构建的、随机的区间。绿色的线段代表“捕获成功”，红色的则代表“捕获失败”。随着模拟次数增加，您会发现绿色的比例会非常接近您设定的置信水平。</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const sampleSizeSlider = document.getElementById('sample-size-slider');
+        const confidenceLevelSlider = document.getElementById('confidence-level-slider');
+        const sampleSizeValue = document.getElementById('sample-size-value');
+        const confidenceLevelValue = document.getElementById('confidence-level-value');
+        const runButton = document.getElementById('run-button');
+        const resetButton = document.getElementById('reset-button');
+        
+        // --- Stats Display ---
+        const totalEl = document.getElementById('total-intervals');
+        const capturedEl = document.getElementById('captured-intervals');
+        const missedEl = document.getElementById('missed-intervals');
+        const captureRateEl = document.getElementById('capture-rate');
+
+        // --- Chart Instance ---
+        let ciChart;
+
+        // --- Simulation State ---
+        const POPULATION_MEAN = 50;
+        const POPULATION_STD = 10;
+        let intervals = [];
+
+        // --- Chart Initialization & Updates ---
+        function createChart() {
+            const ctx = document.getElementById('ci-chart').getContext('2d');
+            ciChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: []
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            display: false,
+                        },
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: '值'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    xMin: POPULATION_MEAN,
+                                    xMax: POPULATION_MEAN,
+                                    borderColor: 'rgb(59, 130, 246)',
+                                    borderWidth: 4,
+                                    label: {
+                                        content: `真实均值 μ = ${POPULATION_MEAN}`,
+                                        enabled: true,
+                                        position: 'start'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            const datasets = intervals.map((interval, index) => ({
+                data: [
+                    { x: interval.lower, y: index + 1 },
+                    { x: interval.upper, y: index + 1 }
+                ],
+                borderColor: interval.captured ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)',
+                borderWidth: 2,
+                showLine: true,
+                pointRadius: 0,
+                tension: 0,
+            }));
+            
+            ciChart.data.datasets = datasets;
+            ciChart.options.scales.y.max = intervals.length + 1;
+            ciChart.update();
+        }
+
+        // --- Simulation Logic ---
+        function runSimulation() {
+            const sampleSize = parseInt(sampleSizeSlider.value);
+            const confidenceLevel = parseInt(confidenceLevelSlider.value) / 100;
+            const alpha = 1 - confidenceLevel;
+            
+            // Using Z-distribution since population std is known
+            const z_critical = jStat.normal.inv(1 - alpha / 2, 0, 1);
+            const standardError = POPULATION_STD / Math.sqrt(sampleSize);
+            const marginOfError = z_critical * standardError;
+
+            for (let i = 0; i < 100; i++) {
+                // *** CORRECTED LOGIC: Generate a full sample of size n ***
+                const sample = [];
+                for (let j = 0; j < sampleSize; j++) {
+                    sample.push(jStat.normal.sample(POPULATION_MEAN, POPULATION_STD));
+                }
+                
+                // 2. Calculate sample mean
+                const sampleMean = jStat.mean(sample);
+                
+                // 3. Construct confidence interval
+                const lowerBound = sampleMean - marginOfError;
+                const upperBound = sampleMean + marginOfError;
+                
+                // 4. Check if it captures the true mean
+                const captured = lowerBound <= POPULATION_MEAN && POPULATION_MEAN <= upperBound;
+                
+                intervals.push({ lower: lowerBound, upper: upperBound, captured: captured });
+            }
+            
+            updateStats();
+            updateChart();
+        }
+
+        function updateStats() {
+            const total = intervals.length;
+            const captured = intervals.filter(i => i.captured).length;
+            const missed = total - captured;
+            const rate = total > 0 ? (captured / total) * 100 : 0;
+
+            totalEl.textContent = total.toLocaleString();
+            capturedEl.textContent = captured.toLocaleString();
+            missedEl.textContent = missed.toLocaleString();
+            captureRateEl.textContent = `${rate.toFixed(2)} %`;
+        }
+        
+        function resetAll() {
+            intervals = [];
+            updateStats();
+            updateChart();
+        }
+
+        // --- Event Listeners ---
+        sampleSizeSlider.addEventListener('input', (e) => {
+            sampleSizeValue.textContent = e.target.value;
+        });
+        confidenceLevelSlider.addEventListener('input', (e) => {
+            confidenceLevelValue.textContent = e.target.value;
+        });
+
+        runButton.addEventListener('click', runSimulation);
+        resetButton.addEventListener('click', resetAll);
+
+        // --- Initial Load ---
+        window.onload = () => {
+             // Chart.js annotation plugin is not part of the core library, so we register it manually.
+            const annotationPlugin = {
+                id: 'annotation',
+                afterDraw(chart, args, options) {
+                    const { ctx, chartArea: { top, right, bottom, left }, scales: { x, y } } = chart;
+                    if (!options.annotations) return;
+
+                    Object.values(options.annotations).forEach(annotation => {
+                        if (annotation.type === 'line') {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.strokeStyle = annotation.borderColor || 'black';
+                            ctx.lineWidth = annotation.borderWidth || 1;
+                            
+                            const xValue = x.getPixelForValue(annotation.xMin);
+                            
+                            ctx.moveTo(xValue, top);
+                            ctx.lineTo(xValue, bottom);
+                            ctx.stroke();
+
+                            if(annotation.label && annotation.label.enabled) {
+                                ctx.fillStyle = annotation.label.color || 'black';
+                                ctx.font = '12px Inter';
+                                ctx.textAlign = 'center';
+                                ctx.fillText(annotation.label.content, xValue, top - 5);
+                            }
+                            ctx.restore();
+                        }
+                    });
+                }
+            };
+            Chart.register(annotationPlugin);
+            createChart();
+            updateStats();
+        };
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>核心概率分布模拟器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for plotting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jStat is now only used for PDF/CDF calculations, not sampling -->
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.5/dist/jstat.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">核心概率分布模拟器</h1>
+            <p class="text-slate-600 mt-2">直观理解理论分布与随机抽样的关系</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Panel: Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+                <div>
+                    <label for="dist-select" class="block text-lg font-semibold mb-2">1. 选择一个概率分布</label>
+                    <select id="dist-select" class="w-full p-2 border border-slate-300 rounded-lg bg-white">
+                        <option value="binomial">二项分布 (Binomial)</option>
+                        <option value="poisson">泊松分布 (Poisson)</option>
+                        <option value="normal">正态分布 (Normal)</option>
+                        <option value="exponential">指数分布 (Exponential)</option>
+                    </select>
+                </div>
+
+                <!-- Parameter Controls -->
+                <div id="params-container">
+                    <h2 class="text-lg font-semibold mb-2">2. 调整分布参数</h2>
+                    <!-- Binomial Params -->
+                    <div id="binomial-params" class="space-y-4">
+                        <div>
+                            <label for="n-slider" class="flex justify-between">试验次数 (n): <span id="n-value">10</span></label>
+                            <input type="range" id="n-slider" min="1" max="100" value="10" class="w-full">
+                        </div>
+                        <div>
+                            <label for="p-slider" class="flex justify-between">成功概率 (p): <span id="p-value">0.5</span></label>
+                            <input type="range" id="p-slider" min="0.01" max="0.99" step="0.01" value="0.5" class="w-full">
+                        </div>
+                    </div>
+                    <!-- Poisson Params -->
+                    <div id="poisson-params" class="hidden space-y-4">
+                        <div>
+                            <label for="lambda-poisson-slider" class="flex justify-between">比率 (λ): <span id="lambda-poisson-value">5</span></label>
+                            <input type="range" id="lambda-poisson-slider" min="0.1" max="20" step="0.1" value="5" class="w-full">
+                        </div>
+                    </div>
+                    <!-- Normal Params -->
+                    <div id="normal-params" class="hidden space-y-4">
+                         <div>
+                            <label for="mu-slider" class="flex justify-between">均值 (μ): <span id="mu-value">0</span></label>
+                            <input type="range" id="mu-slider" min="-10" max="10" step="0.5" value="0" class="w-full">
+                        </div>
+                        <div>
+                            <label for="sigma-slider" class="flex justify-between">标准差 (σ): <span id="sigma-value">2</span></label>
+                            <input type="range" id="sigma-slider" min="0.1" max="10" step="0.1" value="2" class="w-full">
+                        </div>
+                    </div>
+                    <!-- Exponential Params -->
+                    <div id="exponential-params" class="hidden space-y-4">
+                        <div>
+                            <label for="lambda-exp-slider" class="flex justify-between">比率 (λ): <span id="lambda-exp-value">1</span></label>
+                            <input type="range" id="lambda-exp-slider" min="0.1" max="5" step="0.1" value="1" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sampling Controls -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">3. 进行随机抽样</h2>
+                    <div>
+                        <label for="sample-slider" class="flex justify-between">每次抽样数量: <span id="sample-value">1000</span></label>
+                        <input type="range" id="sample-slider" min="100" max="10000" step="100" value="1000" class="w-full">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <button id="sample-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">开始 / 增加抽样</button>
+                        <button id="reset-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">重置</button>
+                    </div>
+                </div>
+
+                <!-- Application Context -->
+                <div id="context-box" class="mt-4 p-4 bg-slate-100 rounded-lg">
+                    <h3 class="font-semibold text-slate-800">应用场景</h3>
+                    <p id="context-text" class="text-sm text-slate-600 mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualizations -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 space-y-8">
+                <div>
+                    <h2 class="text-xl font-bold text-center">理论分布</h2>
+                    <canvas id="theoretical-chart"></canvas>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-center flex justify-center items-center">
+                        随机抽样结果
+                        <span id="total-samples" class="ml-4 text-base font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">总样本: 0</span>
+                    </h2>
+                    <canvas id="sampled-chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const distSelect = document.getElementById('dist-select');
+        const sampleButton = document.getElementById('sample-button');
+        const resetButton = document.getElementById('reset-button');
+        const totalSamplesEl = document.getElementById('total-samples');
+        const contextTextEl = document.getElementById('context-text');
+
+        // --- Chart Instances ---
+        let theoreticalChart, sampledChart;
+        let samples = [];
+
+        // --- Parameter Sliders and Value Displays ---
+        const sliders = {
+            n: { slider: document.getElementById('n-slider'), value: document.getElementById('n-value') },
+            p: { slider: document.getElementById('p-slider'), value: document.getElementById('p-value') },
+            lambda_poisson: { slider: document.getElementById('lambda-poisson-slider'), value: document.getElementById('lambda-poisson-value') },
+            mu: { slider: document.getElementById('mu-slider'), value: document.getElementById('mu-value') },
+            sigma: { slider: document.getElementById('sigma-slider'), value: document.getElementById('sigma-value') },
+            lambda_exp: { slider: document.getElementById('lambda-exp-slider'), value: document.getElementById('lambda-exp-value') },
+            sample: { slider: document.getElementById('sample-slider'), value: document.getElementById('sample-value') }
+        };
+
+        const paramDivs = {
+            binomial: document.getElementById('binomial-params'),
+            poisson: document.getElementById('poisson-params'),
+            normal: document.getElementById('normal-params'),
+            exponential: document.getElementById('exponential-params')
+        };
+        
+        const contextMapping = {
+            binomial: '模拟一个AI广告推荐系统在 n 次展示中，获得 k 次点击的概率分布。',
+            poisson: '模拟一家银行的柜台在一个小时内，客户到达数量 (k) 的概率分布。λ 是平均到达客户数。',
+            normal: '模拟一支股票的每日收益率分布。μ 是平均收益率，σ 是波动率（风险）。',
+            exponential: '模拟电子元件的寿命，或两次客户到达银行的时间间隔。λ 是失效率或平均到达率。'
+        };
+
+        // --- Manual Sampling Functions ---
+        function sampleBinomial(n, p) {
+            let successes = 0;
+            for (let i = 0; i < n; i++) {
+                if (Math.random() <= p) {
+                    successes++;
+                }
+            }
+            return successes;
+        }
+
+        function samplePoisson(lambda) {
+            const L = Math.exp(-lambda);
+            let p = 1.0;
+            let k = 0;
+            do {
+                k++;
+                p *= Math.random();
+            } while (p > L);
+            return k - 1;
+        }
+
+        function sampleNormal(mu, sigma) { // Box-Muller transform
+            let u1, u2;
+            do {
+                u1 = Math.random();
+            } while (u1 === 0);
+            u2 = Math.random();
+            const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+            return z0 * sigma + mu;
+        }
+
+        function sampleExponential(lambda) { // Inverse transform sampling
+            return -Math.log(1.0 - Math.random()) / lambda;
+        }
+
+        // --- Chart Initialization ---
+        function createCharts() {
+            const theoreticalCtx = document.getElementById('theoretical-chart').getContext('2d');
+            theoreticalChart = new Chart(theoreticalCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: '理论概率/密度', data: [], backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }] },
+                options: { scales: { y: { beginAtZero: true, title: { display: true, text: '概率 / 概率密度' } }, x: { title: { display: true, text: '值' } } } }
+            });
+
+            const sampledCtx = document.getElementById('sampled-chart').getContext('2d');
+            sampledChart = new Chart(sampledCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: '抽样频率', data: [], backgroundColor: 'rgba(22, 163, 74, 0.5)', borderColor: 'rgba(22, 163, 74, 1)', borderWidth: 1 }] },
+                options: { scales: { y: { beginAtZero: true, title: { display: true, text: '频率' } }, x: { title: { display: true, text: '值' } } } }
+            });
+        }
+
+        // --- Core Logic ---
+        function updateControls() {
+            const selectedDist = distSelect.value;
+            Object.values(paramDivs).forEach(div => div.classList.add('hidden'));
+            paramDivs[selectedDist].classList.remove('hidden');
+            contextTextEl.textContent = contextMapping[selectedDist];
+            resetSimulation();
+        }
+
+        function updateTheoreticalChart() {
+            const dist = distSelect.value;
+            const params = getParams();
+            let labels = [], data = [];
+
+            sampledChart.config.type = 'bar';
+            
+            if (dist === 'binomial') {
+                theoreticalChart.config.type = 'bar';
+                for (let k = 0; k <= params.n; k++) {
+                    labels.push(k);
+                    data.push(jStat.binomial.pdf(k, params.n, params.p));
+                }
+            } else if (dist === 'poisson') {
+                theoreticalChart.config.type = 'bar';
+                const maxK = Math.max(20, Math.ceil(params.lambda_poisson * 2.5));
+                for (let k = 0; k <= maxK; k++) {
+                    labels.push(k);
+                    data.push(jStat.poisson.pdf(k, params.lambda_poisson));
+                }
+            } else if (dist === 'normal' || dist === 'exponential') {
+                theoreticalChart.config.type = 'line';
+                let range, step, start;
+                if (dist === 'normal') {
+                    range = params.sigma * 4;
+                    step = range * 2 / 100;
+                    start = params.mu - range;
+                    for (let i = 0; i <= 100; i++) {
+                        const x = start + i * step;
+                        labels.push(x.toFixed(2));
+                        data.push(jStat.normal.pdf(x, params.mu, params.sigma));
+                    }
+                } else { // Exponential
+                    const mean = 1 / params.lambda_exp;
+                    range = mean * 5; 
+                    step = range / 100;
+                    start = 0;
+                    for (let i = 0; i <= 100; i++) {
+                        const x = start + i * step;
+                        labels.push(x.toFixed(2));
+                        data.push(jStat.exponential.pdf(x, params.lambda_exp));
+                    }
+                }
+            }
+            
+            theoreticalChart.data.labels = labels;
+            theoreticalChart.data.datasets[0].data = data;
+            theoreticalChart.update();
+        }
+
+        function runSimulation() {
+            const dist = distSelect.value;
+            const params = getParams();
+            const sampleSize = parseInt(sliders.sample.slider.value);
+
+            for (let i = 0; i < sampleSize; i++) {
+                let sample;
+                if (dist === 'binomial') {
+                    sample = sampleBinomial(params.n, params.p);
+                } else if (dist === 'poisson') {
+                    sample = samplePoisson(params.lambda_poisson);
+                } else if (dist === 'normal') {
+                    sample = sampleNormal(params.mu, params.sigma);
+                } else if (dist === 'exponential') {
+                    sample = sampleExponential(params.lambda_exp);
+                }
+                samples.push(sample);
+            }
+            updateSampledChart();
+        }
+
+        function updateSampledChart() {
+            totalSamplesEl.textContent = `总样本: ${samples.length.toLocaleString()}`;
+            if (samples.length === 0) {
+                sampledChart.data.labels = [];
+                sampledChart.data.datasets[0].data = [];
+                sampledChart.update();
+                return;
+            }
+
+            const dist = distSelect.value;
+            
+            if (dist === 'normal' || dist === 'exponential') {
+                const min = jStat.min(samples);
+                const max = jStat.max(samples);
+                const numBins = Math.max(10, Math.min(50, Math.floor(Math.sqrt(samples.length))));
+                const binWidth = (max - min) / numBins;
+                const bins = Array(numBins).fill(0);
+                const labels = [];
+
+                if (binWidth === 0) {
+                    sampledChart.data.labels = [min.toFixed(1)];
+                    sampledChart.data.datasets[0].data = [1];
+                    sampledChart.update();
+                    return;
+                }
+
+                samples.forEach(s => {
+                    let binIndex = Math.floor((s - min) / binWidth);
+                    if (binIndex >= numBins) binIndex = numBins - 1;
+                    bins[binIndex]++;
+                });
+
+                for (let i = 0; i < numBins; i++) {
+                    labels.push((min + i * binWidth).toFixed(1));
+                }
+                
+                sampledChart.data.labels = labels;
+                sampledChart.data.datasets[0].data = bins.map(count => count / samples.length);
+
+            } else { // Discrete distributions
+                const counts = {};
+                samples.forEach(s => {
+                    counts[s] = (counts[s] || 0) + 1;
+                });
+                const sortedKeys = Object.keys(counts).map(Number).sort((a, b) => a - b);
+                const labels = [];
+                const data = [];
+                
+                const theoryLabels = theoreticalChart.data.labels.map(Number);
+                const fullRangeMin = Math.min(...sortedKeys, ...theoryLabels);
+                const fullRangeMax = Math.max(...sortedKeys, ...theoryLabels);
+
+                for (let i = Math.floor(fullRangeMin); i <= Math.ceil(fullRangeMax); i++) {
+                    labels.push(i);
+                    data.push((counts[i] || 0) / samples.length);
+                }
+
+                sampledChart.data.labels = labels;
+                sampledChart.data.datasets[0].data = data;
+            }
+            
+            sampledChart.update();
+        }
+
+        function resetSimulation() {
+            samples = [];
+            updateSampledChart();
+            updateTheoreticalChart();
+        }
+
+        function getParams() {
+            return {
+                n: parseInt(sliders.n.slider.value),
+                p: parseFloat(sliders.p.slider.value),
+                lambda_poisson: parseFloat(sliders.lambda_poisson.slider.value),
+                mu: parseFloat(sliders.mu.slider.value),
+                sigma: parseFloat(sliders.sigma.slider.value),
+                lambda_exp: parseFloat(sliders.lambda_exp.slider.value)
+            };
+        }
+
+        // --- Event Listeners ---
+        distSelect.addEventListener('change', updateControls);
+        
+        Object.values(sliders).forEach(item => {
+            item.slider.addEventListener('input', () => {
+                item.value.textContent = item.slider.value;
+                if (item !== sliders.sample) {
+                    resetSimulation();
+                }
+            });
+        });
+
+        sampleButton.addEventListener('click', runSimulation);
+        resetButton.addEventListener('click', resetSimulation);
+
+        // --- Initial Load ---
+        window.onload = () => {
+            createCharts();
+            updateControls();
+        };
+
+    </script>
+</body>
+</html>

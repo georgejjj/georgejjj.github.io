@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中心极限定理互动演示器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for plotting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jStat for statistical calculations -->
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.5/dist/jstat.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+        #custom-draw-canvas {
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">中心极限定理 (CLT) 互动演示器</h1>
+            <p class="text-slate-600 mt-2">无论总体如何分布，样本均值的分布都趋向于正态分布</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Panel: Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">1. 选择总体分布</h2>
+                    <select id="dist-select" class="w-full p-2 border border-slate-300 rounded-lg bg-white">
+                        <option value="uniform">均匀分布 (Uniform)</option>
+                        <option value="exponential">指数分布 (Exponential)</option>
+                        <option value="custom">自定义分布 (Custom)</option>
+                    </select>
+                </div>
+                
+                <div id="custom-draw-container" class="hidden">
+                     <p class="text-sm text-slate-500">请在下方的画布上用鼠标拖拽，绘制你想要的分布形状。</p>
+                     <canvas id="custom-draw-canvas" class="w-full h-32 bg-slate-50 rounded-lg border mt-2"></canvas>
+                     <button id="clear-draw-button" class="text-sm text-blue-600 hover:text-blue-800 mt-1">清除重画</button>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">2. 设定抽样参数</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="sample-size-slider" class="flex justify-between">样本大小 (n): <span id="sample-size-value">5</span></label>
+                            <input type="range" id="sample-size-slider" min="2" max="50" value="5" class="w-full">
+                        </div>
+                        <div>
+                            <label for="sample-count-slider" class="flex justify-between">抽样次数: <span id="sample-count-value">1</span></label>
+                             <div class="grid grid-cols-4 gap-2 mt-1">
+                                <button onclick="setSampleCount(1)" class="bg-slate-200 text-sm py-1 rounded">1次</button>
+                                <button onclick="setSampleCount(100)" class="bg-slate-200 text-sm py-1 rounded">100次</button>
+                                <button onclick="setSampleCount(1000)" class="bg-slate-200 text-sm py-1 rounded">1000次</button>
+                                <button onclick="setSampleCount(10000)" class="bg-slate-200 text-sm py-1 rounded">1万次</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">3. 开始模拟</h2>
+                     <div class="grid grid-cols-2 gap-4 mt-4">
+                        <button id="run-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">开始抽样</button>
+                        <button id="reset-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">重置所有</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualizations -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+                <div>
+                    <h2 class="text-xl font-bold text-center">A. 总体分布 (Population)</h2>
+                    <canvas id="population-chart"></canvas>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-center">B. 最近一次抽样 (n=<span id="last-sample-size">5</span>)</h2>
+                    <canvas id="last-sample-chart" style="height: 100px;"></canvas>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-center flex justify-center items-center">
+                        C. 样本均值分布
+                        <span id="total-means" class="ml-4 text-base font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">均值数量: 0</span>
+                    </h2>
+                    <canvas id="means-chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const distSelect = document.getElementById('dist-select');
+        const customDrawContainer = document.getElementById('custom-draw-container');
+        const customDrawCanvas = document.getElementById('custom-draw-canvas');
+        const clearDrawButton = document.getElementById('clear-draw-button');
+        const sampleSizeSlider = document.getElementById('sample-size-slider');
+        const sampleSizeValue = document.getElementById('sample-size-value');
+        const lastSampleSize = document.getElementById('last-sample-size');
+        const runButton = document.getElementById('run-button');
+        const resetButton = document.getElementById('reset-button');
+        const totalMeansEl = document.getElementById('total-means');
+
+        // --- Chart Instances ---
+        let populationChart, lastSampleChart, meansChart;
+        let sampleMeans = [];
+        let customDistribution = [];
+
+        // --- Sampling Functions ---
+        function sampleFromUniform() { return Math.random(); }
+        function sampleFromExponential() { return jStat.exponential.sample(4.0); } // lambda=4
+        function sampleFromCustom() {
+            if (customDistribution.length < 2) return Math.random();
+            // Rejection Sampling
+            while (true) {
+                const x = Math.random();
+                const y = Math.random();
+                const index = Math.floor(x * customDistribution.length);
+                if (y < customDistribution[index]) {
+                    return x;
+                }
+            }
+        }
+
+        const samplingFunctions = {
+            uniform: sampleFromUniform,
+            exponential: sampleFromExponential,
+            custom: sampleFromCustom
+        };
+
+        // --- Chart Initialization & Updates ---
+        function createCharts() {
+            populationChart = new Chart(document.getElementById('population-chart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: '总体概率密度', data: [], borderColor: 'rgba(239, 68, 68, 0.8)', backgroundColor: 'rgba(239, 68, 68, 0.3)', fill: true, borderWidth: 2, tension: 0.1, pointRadius: 0 }] },
+                options: { scales: { y: { beginAtZero: true, max: 2.5 }, x: { type: 'linear', title: { display: true, text: '值' } } } }
+            });
+            lastSampleChart = new Chart(document.getElementById('last-sample-chart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: '样本值', data: [], backgroundColor: 'rgba(59, 130, 246, 0.5)' }] },
+                options: { indexAxis: 'y', scales: { x: { title: { display: true, text: '样本值' } } }, plugins: { legend: { display: false } } }
+            });
+            meansChart = new Chart(document.getElementById('means-chart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: [], datasets: [
+                    { label: '样本均值密度', data: [], backgroundColor: 'rgba(22, 163, 74, 0.5)' },
+                    { label: '理论正态分布', type: 'line', data: [], borderColor: 'rgba(234, 179, 8, 1)', fill: false, borderWidth: 2, pointRadius: 0 }
+                ]},
+                options: { scales: { y: { beginAtZero: true, title: { display: true, text: '概率密度' } }, x: { title: { display: true, text: '样本均值' } } } }
+            });
+        }
+        
+        function updatePopulationChart() {
+            const dist = distSelect.value;
+            const data = [];
+            const steps = 100;
+            let xMax = 1.0;
+
+            if (dist === 'uniform' || dist === 'custom') {
+                 xMax = 1.0;
+            } else if (dist === 'exponential') {
+                xMax = 2.0; // Show more range for exponential
+            }
+            
+            for (let i = 0; i <= steps; i++) {
+                const x = (i / steps) * xMax;
+                let y;
+                if (dist === 'uniform') {
+                    y = (x >= 0 && x <= 1) ? 1 : 0;
+                } else if (dist === 'exponential') {
+                    y = jStat.exponential.pdf(x, 4.0);
+                } else if (dist === 'custom') {
+                    if (customDistribution.length > 0) {
+                        const index = Math.floor(x * customDistribution.length);
+                        y = customDistribution[index] || 0;
+                    } else {
+                        y = 0;
+                    }
+                }
+                data.push({x: x, y: y});
+            }
+            
+            populationChart.data.datasets[0].data = data;
+            populationChart.update();
+        }
+
+        function updateMeansChart() {
+            if (sampleMeans.length < 2) {
+                meansChart.data.labels = [];
+                meansChart.data.datasets[0].data = [];
+                meansChart.data.datasets[1].data = [];
+                meansChart.update();
+                return;
+            }
+
+            const numBins = Math.max(10, Math.min(50, Math.floor(Math.sqrt(sampleMeans.length))));
+            const min = jStat.min(sampleMeans);
+            const max = jStat.max(sampleMeans);
+            
+            if (max === min) {
+                meansChart.data.labels = [min.toFixed(2)];
+                meansChart.data.datasets[0].data = [1];
+                meansChart.data.datasets[1].data = [];
+                meansChart.update();
+                return;
+            }
+
+            const binWidth = (max - min) / numBins;
+            const bins = Array(numBins).fill(0);
+            const labels = [];
+
+            sampleMeans.forEach(mean => {
+                let binIndex = Math.floor((mean - min) / binWidth);
+                if (binIndex >= numBins) binIndex = numBins - 1;
+                bins[binIndex]++;
+            });
+
+            for (let i = 0; i < numBins; i++) {
+                labels.push((min + i * binWidth).toFixed(2));
+            }
+            
+            const total = sampleMeans.length;
+            meansChart.data.labels = labels;
+            meansChart.data.datasets[0].data = bins.map(count => count / total / binWidth);
+            
+            const meanOfMeans = jStat.mean(sampleMeans);
+            const stdOfMeans = jStat.stdev(sampleMeans, true);
+            const normalData = labels.map(label => jStat.normal.pdf(parseFloat(label), meanOfMeans, stdOfMeans));
+            meansChart.data.datasets[1].data = normalData;
+
+            meansChart.update();
+        }
+
+        // --- Simulation Logic ---
+        let sampleCount = 1;
+        function setSampleCount(count) {
+            sampleCount = count;
+            document.getElementById('sample-count-value').textContent = count === 10000 ? '1万' : count;
+        }
+
+        function runSimulation() {
+            const sampleSize = parseInt(sampleSizeSlider.value);
+            const sampleFunc = samplingFunctions[distSelect.value];
+            
+            let lastSampleForDisplay = [];
+            for (let i = 0; i < sampleCount; i++) {
+                const currentSample = [];
+                for (let j = 0; j < sampleSize; j++) {
+                    currentSample.push(sampleFunc());
+                }
+                const mean = jStat.mean(currentSample);
+                sampleMeans.push(mean);
+                if (i === sampleCount - 1) {
+                    lastSampleForDisplay = currentSample;
+                }
+            }
+            
+            lastSampleChart.data.labels = lastSampleForDisplay.map((_, idx) => `s${idx+1}`);
+            lastSampleChart.data.datasets[0].data = lastSampleForDisplay;
+            lastSampleChart.update();
+            
+            totalMeansEl.textContent = `均值数量: ${sampleMeans.length.toLocaleString()}`;
+            updateMeansChart();
+        }
+        
+        // --- Custom Draw Logic ---
+        const drawCtx = customDrawCanvas.getContext('2d');
+        let isDrawing = false;
+        let lastX, lastY;
+        
+        function normalizeCustomDist() {
+            const maxVal = Math.max(...customDistribution);
+            if (maxVal === 0) return;
+            const sum = customDistribution.reduce((a, b) => a + b, 0);
+            const scale = customDistribution.length / sum;
+            customDistribution = customDistribution.map(v => v * scale);
+            updatePopulationChart();
+        }
+
+        customDrawCanvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = customDrawCanvas.getBoundingClientRect();
+            customDistribution = Array(Math.floor(rect.width)).fill(0);
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+            drawOnCanvas(e);
+        });
+        customDrawCanvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) drawOnCanvas(e);
+        });
+        customDrawCanvas.addEventListener('mouseup', () => {
+            if (isDrawing) { isDrawing = false; normalizeCustomDist(); }
+        });
+        customDrawCanvas.addEventListener('mouseleave', () => {
+            if (isDrawing) { isDrawing = false; normalizeCustomDist(); }
+        });
+
+        function drawOnCanvas(e) {
+            if (!isDrawing) return;
+            const rect = customDrawCanvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+
+            const dist = Math.sqrt(Math.pow(currentX - lastX, 2) + Math.pow(currentY - lastY, 2));
+            const steps = Math.max(1, Math.floor(dist));
+            
+            for (let i = 0; i < steps; i++) {
+                const t = i / steps;
+                const x = lastX + (currentX - lastX) * t;
+                const y = lastY + (currentY - lastY) * t;
+                const index = Math.floor(x);
+                if(index >= 0 && index < customDistribution.length) {
+                     customDistribution[index] = Math.max(0, (rect.height - y) / rect.height);
+                }
+            }
+            
+            lastX = currentX;
+            lastY = currentY;
+
+            drawCtx.clearRect(0, 0, customDrawCanvas.width, customDrawCanvas.height);
+            drawCtx.beginPath();
+            drawCtx.moveTo(0, customDrawCanvas.height);
+            customDistribution.forEach((val, idx) => {
+                drawCtx.lineTo(idx, customDrawCanvas.height * (1 - (val || 0)));
+            });
+            drawCtx.lineTo(customDrawCanvas.width, customDrawCanvas.height);
+            drawCtx.closePath();
+            drawCtx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+            drawCtx.fill();
+        }
+
+        // --- Event Listeners ---
+        distSelect.addEventListener('change', () => {
+            customDrawContainer.classList.toggle('hidden', distSelect.value !== 'custom');
+            resetAll();
+        });
+        
+        clearDrawButton.addEventListener('click', () => {
+             customDistribution = [];
+             drawCtx.clearRect(0, 0, customDrawCanvas.width, customDrawCanvas.height);
+             resetAll();
+        });
+
+        sampleSizeSlider.addEventListener('input', (e) => {
+            sampleSizeValue.textContent = e.target.value;
+            lastSampleSize.textContent = e.target.value;
+            resetAll();
+        });
+
+        runButton.addEventListener('click', runSimulation);
+        
+        function resetAll() {
+            sampleMeans = [];
+            totalMeansEl.textContent = `均值数量: 0`;
+            updatePopulationChart();
+            updateMeansChart();
+            lastSampleChart.data.labels = [];
+            lastSampleChart.data.datasets[0].data = [];
+            lastSampleChart.update();
+        }
+        resetButton.addEventListener('click', resetAll);
+
+        // --- Initial Load ---
+        window.onload = () => {
+            createCharts();
+            updatePopulationChart();
+        };
+
+    </script>
+</body>
+</html>

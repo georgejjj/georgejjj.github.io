@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蒙特卡洛模拟π互动演示 | Monte Carlo π Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .pi-value {
+            font-weight: 900; /* Black weight for emphasis */
+            letter-spacing: -0.05em;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">蒙特卡洛模拟π互动演示</h1>
+            <p class="text-slate-600 mt-2">通过向正方形随机撒点来估算圆周率 π</p>
+        </header>
+
+        <!-- Main Content: Simulation and Controls -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Panel: Simulation Canvas -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center justify-center">
+                <canvas id="simulationCanvas" class="w-full h-auto aspect-square rounded-lg max-w-2xl"></canvas>
+            </div>
+
+            <!-- Right Panel: Controls and Data Display -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">控制面板</h2>
+                    <div class="space-y-4">
+                        <p class="text-sm text-slate-600">选择要投掷的点的数量，然后点击“开始/增加”按钮。</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-2">
+                            <button onclick="setPointCount(100)" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg transition-colors">100</button>
+                            <button onclick="setPointCount(1000)" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg transition-colors">1000</button>
+                            <button onclick="setPointCount(10000)" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg transition-colors">10000</button>
+                            <button onclick="setPointCount(50000)" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg transition-colors">50000</button>
+                        </div>
+                        <input type="number" id="pointCountInput" class="w-full p-2 border border-slate-300 rounded-lg" value="1000" min="1" max="1000000">
+                        <button id="startButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">
+                            开始 / 增加
+                        </button>
+                         <button id="resetButton" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">
+                            重置模拟
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t">
+                    <h2 class="text-2xl font-bold mb-4">实时数据</h2>
+                    <div class="space-y-3 text-lg">
+                        <div class="flex justify-between"><span>投点总数 (N):</span> <span id="totalPoints" class="font-semibold">0</span></div>
+                        <div class="flex justify-between"><span>圆内点数 (k):</span> <span id="pointsInside" class="font-semibold text-blue-600">0</span></div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <p class="text-slate-600 text-xl">π 的估算值</p>
+                        <p id="piEstimate" class="text-6xl md:text-7xl text-blue-600 pi-value transition-all duration-500">0.000000</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Explanation Section -->
+        <footer class="mt-8 bg-white rounded-2xl shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-4">实验原理</h2>
+            <div class="prose max-w-none text-slate-700">
+                <p>这个模拟利用几何概型来估算π。我们向一个边长为2的正方形内随机、均匀地投掷大量的点，该正方形内嵌一个半径为1的圆。</p>
+                <h3 class="font-semibold">面积与概率</h3>
+                <p>根据几何概型，一个随机点落在圆内的概率等于圆的面积与正方形面积之比：</p>
+                <div class="text-center bg-slate-100 p-4 rounded-lg my-4">
+                    <p class="text-lg font-mono">P(点在圆内) = (π * r²) / (2r)² = (π * 1²) / 2² = π / 4</p>
+                </div>
+                <h3 class="font-semibold">蒙特卡洛估算</h3>
+                <p>我们可以通过计算落在圆内的点的频率来近似这个概率。设投点总数为N，落在圆内的点数为k，则：</p>
+                 <div class="text-center bg-slate-100 p-4 rounded-lg my-4">
+                    <p class="text-lg font-mono">k / N ≈ π / 4</p>
+                </div>
+                <p>通过这个关系式，我们可以反推出 π 的估算值：</p>
+                <div class="text-center bg-slate-100 p-4 rounded-lg my-4">
+                     <p class="text-xl font-mono">π ≈ 4 * (k / N)</p>
+                </div>
+                <p>随着投点总数N的增加，根据大数定律，这个估算值会越来越精确地收敛到π的真实值。</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- Canvas and Simulation Setup ---
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let totalPoints = 0;
+        let pointsInside = 0;
+        let animationFrameId;
+
+        // --- UI Elements ---
+        const totalPointsEl = document.getElementById('totalPoints');
+        const pointsInsideEl = document.getElementById('pointsInside');
+        const piEstimateEl = document.getElementById('piEstimate');
+        const pointCountInput = document.getElementById('pointCountInput');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+
+        // --- Core Functions ---
+
+        /**
+         * Resizes the canvas and draws the initial state (square and circle).
+         */
+        function setupCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            drawBoard();
+        }
+
+        /**
+         * Draws the square and the inscribed circle.
+         */
+        function drawBoard() {
+            const size = canvas.clientWidth;
+            ctx.clearRect(0, 0, size, size);
+            
+            // Draw the square
+            ctx.strokeStyle = '#94a3b8'; // slate-400
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, size, size);
+
+            // Draw the quarter circle
+            ctx.strokeStyle = '#3b82f6'; // blue-500
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI / 2);
+            ctx.stroke();
+        }
+
+        /**
+         * Simulates dropping a single point and draws it.
+         */
+        function dropPoint() {
+            const size = canvas.clientWidth;
+            // Generate a random point within the square [0,1] x [0,1]
+            const x = Math.random();
+            const y = Math.random();
+
+            // Check if the point is inside the quarter circle (x^2 + y^2 <= 1)
+            const distanceSq = x * x + y * y;
+            const isInside = distanceSq <= 1;
+
+            // Update counts
+            totalPoints++;
+            if (isInside) {
+                pointsInside++;
+            }
+
+            // Draw the point on the canvas, scaling coordinates to canvas size
+            const drawX = x * size;
+            const drawY = y * size;
+            ctx.fillStyle = isInside ? 'rgba(59, 130, 246, 0.6)' : 'rgba(239, 68, 68, 0.6)'; // blue-500 or red-500
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        /**
+         * Updates the statistics display on the page.
+         */
+        function updateStats() {
+            totalPointsEl.textContent = totalPoints.toLocaleString();
+            pointsInsideEl.textContent = pointsInside.toLocaleString();
+
+            if (totalPoints > 0) {
+                const pi = 4 * (pointsInside / totalPoints);
+                piEstimateEl.textContent = pi.toFixed(6);
+            } else {
+                piEstimateEl.textContent = '0.000000';
+            }
+        }
+        
+        /**
+         * Runs the simulation for a given number of iterations.
+         */
+        function runSimulation(count) {
+            startButton.disabled = true;
+            startButton.textContent = '模拟中...';
+            
+            cancelAnimationFrame(animationFrameId);
+
+            let i = 0;
+            function batch() {
+                const batchSize = Math.min(count - i, 1000); 
+                for (let j = 0; j < batchSize; j++) {
+                    dropPoint();
+                }
+                i += batchSize;
+                
+                updateStats();
+
+                if (i < count) {
+                    animationFrameId = requestAnimationFrame(batch);
+                } else {
+                    startButton.disabled = false;
+                    startButton.textContent = '开始 / 增加';
+                }
+            }
+            batch();
+        }
+
+        // --- Event Listeners ---
+        function setPointCount(count) {
+            pointCountInput.value = count;
+        }
+
+        startButton.addEventListener('click', () => {
+            const count = parseInt(pointCountInput.value, 10);
+            if (count > 0) {
+                runSimulation(count);
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrameId);
+            totalPoints = 0;
+            pointsInside = 0;
+            updateStats();
+            drawBoard();
+            startButton.disabled = false;
+            startButton.textContent = '开始 / 增加';
+        });
+
+        window.addEventListener('resize', setupCanvas);
+
+        // --- Initial Load ---
+        setupCanvas();
+
+    </script>
+</body>
+</html>
