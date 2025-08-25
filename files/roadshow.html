@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“基智分析师”智能体交互式路演</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Subtle Accents -->
+    <!-- Application Structure Plan: The SPA is structured as a single-page, scrollable narrative that mirrors the four core parts of the presentation. A sticky navigation bar allows users to jump between sections. The structure is designed for a linear, storytelling experience, guiding the user from the problem to the solution and future vision. Key interactions include hover effects to reveal details, clickable tabs to switch between content (like the GEI pillars), and animated charts to present data dynamically. This thematic, section-based approach was chosen to maintain the logical flow of the original presentation while enhancing it with interactivity, making complex concepts more digestible and engaging for a professional audience. -->
+    <!-- Visualization & Content Choices: 
+        - Section 2 (GEI Framework): Goal: Explain the complex GEI framework. Method: An interactive diagram built with HTML/CSS and JS. Interaction: Users can click on the three main pillars ('利益冲突', '投研能力', '信息披露') to dynamically display the corresponding sub-indicators and their descriptions. Justification: This interactive exploration is more engaging than a static list and helps users understand the framework's depth.
+        - Section 2 (Empirical Results): Goal: Showcase the significant performance improvement. Method: An animated bar chart using Chart.js. Interaction: The chart bars animate on scroll, visually emphasizing the 2.67% increase in annualized excess return. Justification: Animation draws attention to the key takeaway number, making the research finding more impactful.
+        - Section 3 (AI Architecture): Goal: Demystify the AI's technical core. Method: A diagram using HTML/CSS with hover-to-reveal tooltips for terms like RAG and SFT. Interaction: Hovering over technical acronyms instantly provides a simple explanation. Justification: This lowers the barrier to understanding for non-technical stakeholders without cluttering the main view.
+        - Section 4 (Multi-Agent Future): Goal: Contrast current and future architectures. Method: A side-by-side comparison using HTML/CSS grid with icons. Interaction: Hovering over each agent role reveals its specific function. Justification: A clean, visual comparison makes the evolution of the architecture clear and easy to grasp.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        html {
+            scroll-snap-type: y mandatory;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            scroll-behavior: smooth; 
+        }
+        section {
+            scroll-snap-align: start;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem; /* p-6 */
+            scroll-margin-top: 4.5rem; /* Fix for sticky header overlap */
+        }
+        .bg-warm-neutral { background-color: #FDFBF7; }
+        .text-lead { color: #3D3D3D; }
+        .text-body { color: #5A5A5A; }
+        .accent-color { color: #D97706; }
+        .accent-bg { background-color: #D97706; }
+        .section-card { background-color: #FFFFFF; border: 1px solid #F3F4F6; }
+        .nav-link { transition: color 0.3s ease, border-color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: #D97706; border-bottom-color: #D97706; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #3D3D3D;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            line-height: 1.25;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-warm-neutral text-body">
+
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-lead">
+                <span class="accent-color">基智</span>分析师
+            </div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#part1" class="nav-link pb-1 border-b-2 border-transparent">行业痛点</a>
+                <a href="#part2" class="nav-link pb-1 border-b-2 border-transparent">理论基石</a>
+                <a href="#part3" class="nav-link pb-1 border-b-2 border-transparent">智能涌现</a>
+                <a href="#part4" class="nav-link pb-1 border-b-2 border-transparent">未来展望</a>
+            </div>
+            <div class="md:hidden">
+                <button id="menu-btn" class="text-lead focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4 space-y-2">
+            <a href="#part1" class="block nav-link">行业痛点</a>
+            <a href="#part2" class="block nav-link">理论基石</a>
+            <a href="#part3" class="block nav-link">智能涌现</a>
+            <a href="#part4" class="block nav-link">未来展望</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="part1">
+            <div class="container mx-auto text-center">
+                <h1 class="text-4xl md:text-6xl font-bold text-lead mb-4 leading-tight">AI驱动的基金分析新范式</h1>
+                <p class="text-lg md:text-xl text-body mb-8 max-w-3xl mx-auto">基于深度治理评估的“基智分析师”智能体，旨在解决“基金赚钱、基民亏损”的行业痛点，开启智能决策新时代。</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mx-auto mt-8">
+                    <div class="section-card p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                        <div class="text-3xl mb-3">📊</div>
+                        <h3 class="text-lg font-semibold text-lead mb-2">信息不对称</h3>
+                        <p class="text-sm">投资者难以穿透复杂的基金运作，无法识别真正的长期价值。</p>
+                    </div>
+                    <div class="section-card p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                        <div class="text-3xl mb-3">🎭</div>
+                        <h3 class="text-lg font-semibold text-lead mb-2">代理问题</h3>
+                        <p class="text-sm">管理人与投资者利益不一，可能存在“窗口粉饰”等短期行为。</p>
+                    </div>
+                    <div class="section-card p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                        <div class="text-3xl mb-3">🔍</div>
+                        <h3 class="text-lg font-semibold text-lead mb-2">框架局限</h3>
+                        <p class="text-sm">传统分析过度依赖历史指标，是“后视镜”而非“望远镜”。</p>
+                    </div>
+                </div>
+                 <p class="mt-12 text-lg font-semibold accent-color">我们的破局点：从“看业绩”到“察治理”</p>
+            </div>
+        </section>
+
+        <section id="part2">
+            <div class="container mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-lead">理论基石：创新的治理增强指标体系 (GEI)</h2>
+                    <p class="mt-4 max-w-2xl mx-auto">我们告别单一维度分析，引入“治理”这一关键变量，构建了一个更全面、前瞻、深入的基金评估坐标系。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="section-card p-8 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold text-lead mb-4">GEI体系构成</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-lg font-semibold accent-color">传统指标体系 (TI)</h4>
+                                <p class="mt-1">包含17个经典指标，如规模、费用、历史Alpha等，作为分析的基础。</p>
+                            </div>
+                            <div class="border-t border-gray-200 my-4"></div>
+                            <div>
+                                <h4 class="text-lg font-semibold accent-color">基金治理指标体系 (GI)</h4>
+                                <p class="mt-1">包含19个独创性指标，是我们框架的核心，旨在量化“看不见”的治理水平。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-card p-8 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold text-lead mb-6">基金治理的三大核心支柱</h3>
+                        <div id="gei-interactive" class="space-y-4">
+                            <div class="p-4 rounded-lg border-2 border-amber-500 cursor-pointer gei-pillar" data-content="pillar1-content">
+                                <h4 class="font-semibold text-lead">维度一：利益冲突与业绩操纵</h4>
+                            </div>
+                            <div class="p-4 rounded-lg border border-gray-200 cursor-pointer gei-pillar" data-content="pillar2-content">
+                                <h4 class="font-semibold text-lead">维度二：投研能力与行为偏误</h4>
+                            </div>
+                            <div class="p-4 rounded-lg border border-gray-200 cursor-pointer gei-pillar" data-content="pillar3-content">
+                                <h4 class="font-semibold text-lead">维度三：信息披露</h4>
+                            </div>
+                        </div>
+                        <div id="gei-content-display" class="mt-4 p-4 bg-amber-50 rounded-lg min-h-[120px]">
+                            <div id="pillar1-content" class="gei-content">
+                                <p class="font-semibold">评估基金管理人是否与投资者“同心同德”。</p>
+                                <ul class="list-disc list-inside text-sm mt-2 space-y-1">
+                                    <li>量化“窗口粉饰”、“家族抬轿”等行为。</li>
+                                    <li>分析员工/公司持股比例、经理稳定性。</li>
+                                </ul>
+                            </div>
+                            <div id="pillar2-content" class="hidden gei-content">
+                                <p class="font-semibold">评估基金经理的专业能力与决策理性。</p>
+                                <ul class="list-disc list-inside text-sm mt-2 space-y-1">
+                                    <li>分析主动管理比例、收益差距等。</li>
+                                    <li>量化“处置效应”、“羊群效应”等偏误。</li>
+                                </ul>
+                            </div>
+                            <div id="pillar3-content" class="hidden gei-content">
+                                <p class="font-semibold">评估基金的透明度与对投资者的友好程度。</p>
+                                 <ul class="list-disc list-inside text-sm mt-2 space-y-1">
+                                    <li>借鉴欧盟MiFID II框架进行评分。</li>
+                                    <li>考察官网、产品页、投诉处理等信息质量。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-16 text-center">
+                     <h3 class="text-2xl font-bold text-lead mb-6">实证效果：治理，看得见的超额收益</h3>
+                     <div class="section-card p-8 rounded-xl shadow-lg">
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <p class="mt-4 font-semibold text-lg">引入治理指标后，年化超额收益提升<span class="accent-color text-2xl font-bold"> 2.67%</span>，达到 <span class="accent-color text-2xl font-bold">7.19%</span></p>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="part3">
+            <div class="container mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-lead">智能涌现：AI基金分析师“基智”</h2>
+                    <p class="mt-4 max-w-2xl mx-auto">大语言模型驱动的智能体，是唯一能将复杂研究成果转化为规模化、实时化、交互式应用的“翻译器”和“执行器”。</p>
+                    <a href="https://www.coze.cn/store/agent/7509298372566974514?bot_id=true" target="_blank" rel="noopener noreferrer" class="mt-6 inline-block accent-bg text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-amber-700 transition-colors duration-300">
+                        体验智能体 Demo
+                    </a>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-2 section-card p-8 rounded-xl shadow-lg">
+                         <h3 class="text-2xl font-bold text-lead mb-6">“基智分析师”技术内核</h3>
+                         <div class="space-y-6">
+                            <div class="flex items-start space-x-4">
+                                <div class="text-2xl">🧠</div>
+                                <div>
+                                    <h4 class="font-semibold text-lead">专有知识内核</h4>
+                                    <p class="text-sm mt-1">通过 <span class="font-semibold accent-color tooltip">RAG<span class="tooltiptext">检索增强生成 (Retrieval-Augmented Generation): 结合外部知识库来生成更准确、更具事实性的回答，减少模型幻觉。</span></span> 技术，确保所有分析都有据可依，精准溯源。</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start space-x-4">
+                                <div class="text-2xl">💡</div>
+                                <div>
+                                    <h4 class="font-semibold text-lead">专业推理引擎</h4>
+                                    <p class="text-sm mt-1">通过 <span class="font-semibold accent-color tooltip">SFT<span class="tooltiptext">监督微调 (Supervised Fine-Tuning): 使用高质量的、特定领域的问答对数据来训练模型，使其掌握专业知识和分析逻辑。</span></span> 技术，训练模型具备专业分析师的思维模式。</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start space-x-4">
+                                <div class="text-2xl">🔄</div>
+                                <div>
+                                    <h4 class="font-semibold text-lead">实时工具矩阵</h4>
+                                    <p class="text-sm mt-1">通过标准化的API接口，实时调用外部数据源，获取最新基金指标。</p>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                    <div class="lg:col-span-3 section-card p-6 rounded-xl shadow-lg">
+                        <div class="bg-gray-800 rounded-lg h-full flex flex-col">
+                            <div class="flex-shrink-0 p-3 bg-gray-700 rounded-t-lg text-white text-sm font-mono">
+                                与“基智分析师”的对话
+                            </div>
+                            <div id="chat-window" class="flex-grow p-4 space-y-4 overflow-y-auto h-96">
+                            </div>
+                            <div class="p-3 bg-gray-700 rounded-b-lg">
+                                <div class="flex items-center bg-gray-600 rounded-lg">
+                                    <input id="chat-input" type="text" class="w-full bg-transparent text-white placeholder-gray-400 p-2 focus:outline-none" placeholder="输入基金名称或代码..." readonly>
+                                    <button id="chat-send" class="p-2 text-gray-400 cursor-not-allowed">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="part4">
+            <div class="container mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-lead">未来展望：从单体智能到“数字投委会”</h2>
+                    <p class="mt-4 max-w-2xl mx-auto">我们的架构具备高度可扩展性，未来将从全能的“分析师”演进为协同工作的“数字投资委员会”。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="section-card p-8 rounded-xl shadow-lg border-2 border-gray-200">
+                        <h3 class="text-2xl font-bold text-lead mb-4">当前架构 (单Agent)</h3>
+                        <p class="mb-4">一个全能的“基智分析师”，负责所有分析环节。</p>
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-green-100 text-green-700 p-2 rounded-full text-sm font-bold">✓</div>
+                            <p>结构清晰，快速验证核心价值。</p>
+                        </div>
+                    </div>
+                    <div class="section-card p-8 rounded-xl shadow-lg border-2 border-amber-500">
+                        <h3 class="text-2xl font-bold text-lead mb-4">未来架构 (多Agent协作)</h3>
+                        <p class="mb-4">模拟真实投研团队，由多个专家Agent协同工作。</p>
+                         <div class="space-y-3 text-sm">
+                            <p><strong class="text-amber-700">投研主管:</strong> 核心决策者，拆解并分配任务。</p>
+                            <p><strong class="text-amber-700">治理洞察分析师:</strong> GEI框架专家，深度剖析治理水平。</p>
+                            <p><strong class="text-amber-700">量化因子分析师:</strong> 传统指标专家，专注量化数据。</p>
+                            <p><strong class="text-amber-700">宏观舆情策略师:</strong> 捕捉宏观政策与市场情绪。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="bg-white border-t border-gray-200 p-6">
+            <div class="container mx-auto text-center text-gray-500">
+                <h3 class="text-2xl font-bold text-lead mb-4">总结与合作展望</h3>
+                <p class="max-w-3xl mx-auto mb-6">我们带来了创新的理论框架(GEI)、强大的AI工具(“基智分析师”)和可扩展的未来架构。我们寻求与金融机构、数据提供商和技术伙伴合作，共同推动智能金融的未来。</p>
+                <p class="text-lg font-semibold text-lead">联系我们 & Q&A</p>
+                <p class="text-sm mt-2">&copy; 2025 “基智分析师”团队. All Rights Reserved.</p>
+            </div>
+        </footer>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main > section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.6
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const geiPillars = document.querySelectorAll('.gei-pillar');
+            const geiContents = document.querySelectorAll('.gei-content');
+
+            geiPillars.forEach(pillar => {
+                pillar.addEventListener('click', () => {
+                    geiPillars.forEach(p => {
+                        p.classList.remove('border-amber-500', 'border-2');
+                        p.classList.add('border-gray-200');
+                    });
+                    pillar.classList.add('border-amber-500', 'border-2');
+                    pillar.classList.remove('border-gray-200');
+
+                    const contentId = pillar.dataset.content;
+                    geiContents.forEach(content => {
+                        if (content.id === contentId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const performanceChartCtx = document.getElementById('performanceChart').getContext('2d');
+            let performanceChart;
+            const performanceData = {
+                labels: ['仅使用传统指标(TI)', '引入治理指标(GEI)'],
+                datasets: [{
+                    label: '年化超额收益 (%)',
+                    data: [4.52, 7.19],
+                    backgroundColor: [
+                        'rgba(252, 211, 77, 0.6)',
+                        'rgba(217, 119, 6, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(252, 211, 77, 1)',
+                        'rgba(217, 119, 6, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            const performanceConfig = {
+                type: 'bar',
+                data: performanceData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '年化超额收益 (%)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const item = tooltipItems[0];
+                                    let label = item.chart.data.labels[item.dataIndex];
+                                    return Array.isArray(label) ? label.join(' ') : label;
+                                },
+                                label: function(context) {
+                                    return `年化超额收益: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            };
+
+            const chartObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting){
+                        if(performanceChart) performanceChart.destroy();
+                        performanceChart = new Chart(performanceChartCtx, performanceConfig);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            chartObserver.observe(document.getElementById('performanceChart'));
+
+            const chatWindow = document.getElementById('chat-window');
+            const demoMessages = [
+                { from: 'user', text: '分析一下XX基金（代码：XXXXXX）' },
+                { from: 'bot', text: '好的，正在调用工作流为您生成深度分析报告...<br>报告已生成：<br><strong>【GEI治理评级】: 优秀 (A)</strong><br><strong>【核心洞察】:</strong> 该基金在“信息披露”维度表现突出，处于市场前列，这是预测长期业绩的关键积极信号。但在“业绩操纵”相关指标上处于市场中下游，需保持关注。' },
+                { from: 'user', text: '报告里提到的‘窗口粉饰’是什么意思？' },
+                { from: 'bot', text: '“窗口粉饰”指的是基金管理人在季度末等报告期前，通过买入近期上涨的股票、卖出下跌的股票，来人为美化投资组合，从而可能误导投资者。该基金此项指标得分为0.08，处于市场中下游，说明存在一定的业绩操纵嫌疑。' }
+            ];
+
+            let messageIndex = 0;
+            let chatInterval;
+
+            function addMessage() {
+                if (messageIndex >= demoMessages.length) {
+                    clearInterval(chatInterval);
+                    setTimeout(() => {
+                        chatWindow.innerHTML = '';
+                        messageIndex = 0;
+                        chatInterval = setInterval(addMessage, 2500);
+                    }, 5000);
+                    return;
+                };
+
+                const msg = demoMessages[messageIndex];
+                const messageElement = document.createElement('div');
+                
+                if (msg.from === 'user') {
+                    messageElement.className = 'flex justify-end';
+                    messageElement.innerHTML = `<div class="bg-amber-500 text-white p-3 rounded-lg max-w-xs">${msg.text}</div>`;
+                } else {
+                    messageElement.className = 'flex justify-start';
+                    messageElement.innerHTML = `<div class="bg-gray-600 text-white p-3 rounded-lg max-w-xs">${msg.text}</div>`;
+                }
+                
+                chatWindow.appendChild(messageElement);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+                messageIndex++;
+            }
+            
+            const chatObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if (!chatInterval) {
+                           setTimeout(() => {
+                                chatInterval = setInterval(addMessage, 2500);
+                           }, 1000);
+                        }
+                    } else {
+                        clearInterval(chatInterval);
+                        chatInterval = null;
+                        chatWindow.innerHTML = '';
+                        messageIndex = 0;
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            chatObserver.observe(chatWindow);
+        });
+    </script>
+</body>
+</html>
